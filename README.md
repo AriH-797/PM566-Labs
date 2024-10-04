@@ -255,3 +255,85 @@ leaflet(both) %>%
 ```
 
 Knit the doc and save it on GitHub.
+## Question 4: Means of means
+
+Using the `quantile()` function, generate a summary table that shows the number of states included, average temperature, wind-speed, and atmospheric pressure by the variable "average temperature level," which you'll need to create.
+
+Start by computing the states' average temperature. Use that measurement to classify them according to the following criteria:
+
+-   low: temp \< 20
+-   Mid: temp \>= 20 and temp \< 25
+-   High: temp \>= 25
+
+```{r}
+
+ averages <- dat %>%
+  group_by(STATE) %>%
+  summarise(
+    average_temp = mean(temp, na.rm = TRUE),
+    average_wind = mean(wind.sp, na.rm = TRUE),
+    average_atm = mean(atm.press, na.rm = TRUE)
+  )  %>%
+  mutate(temp_level = if_else(average_temp < 20, "low", 
+                      if_else(average_temp >= 20 & average_temp < 25, "mid", 
+                              "high")))
+
+# Step 2: Create summary table
+s_table <- averages %>%
+  group_by(temp_level) %>%
+  summarise(
+    number_of_states = n(),
+    average_temp = mean(average_temp, na.rm = TRUE),
+    average_wind = mean(average_wind, na.rm = TRUE),
+    average_atm = mean(average_atm, na.rm = TRUE))
+
+# Display the summary table
+print(s_table)
+
+```
+Once you are done with that, you can compute the following:
+
+-   Number of entries (records),
+-   Number of NA entries,
+-   Number of stations,
+-   Number of states included, and
+-   Mean temperature, wind-speed, and atmospheric pressure.
+
+All by the levels described before.
+
+```{r}
+state_s <- dat %>%
+  group_by(STATE) %>%
+  summarise(
+    average_temp = mean(temp, na.rm = TRUE),
+    average_wind = mean(wind.sp, na.rm = TRUE),
+    average_atm = mean(atm.press, na.rm = TRUE),
+    records = n(),
+    na_entries = sum(is.na(temp)) + sum(is.na(wind.sp)) + sum(is.na(atm.press)),
+    num_stations = n_distinct(USAFID)) %>%
+  mutate(temp_level = if_else(average_temp < 20, "low", 
+                      if_else(average_temp >= 20 & average_temp < 25, "mid", 
+                              "high")))
+
+  
+summary_table<- state_s %>%
+  group_by(temp_level) %>%
+  reframe(
+    number_of_states = n(),
+    records = sum(records),
+    na_entries = sum(na_entries),
+    num_stations = sum(num_stations),
+    average_temp = mean(average_temp, na.rm = TRUE),
+    average_wind = mean(average_wind, na.rm = TRUE),
+    average_atm = mean(average_atm, na.rm = TRUE))
+print(summary_table)
+```
+
+Knit the document, commit your changes, and push them to GitHub. Once you're done, you can email me the link to your repository or, preferably, link to the [Lab 5 Issue](https://github.com/USCbiostats/PM566/issues/68) in your commit message, as follows:
+
+``` bash
+git commit -a -m "Finalizing lab 5 https://github.com/USCbiostats/PM566/issues/68"
+```
+
+This will let me know which version of your repository to look at for grading purposes.
+
