@@ -209,3 +209,49 @@ repstations <- station_med %>%
 Most representative station is in Texas (USAFID = 722536), with the lowest eucledian distance and the lowest latitude at 29.53.
 
 Knit the doc and save it on GitHub.
+
+## Question 3: In the middle?
+
+For each state, identify what is the station that is closest to the mid-point of the state. Combining these with the stations you identified in the previous question, use `leaflet()` to visualize all \~100 points in the same figure, applying different colors for those identified in this question.
+
+```{r}
+
+midpoints <- dat %>%
+  group_by(STATE) %>%
+  summarise(
+    lat_mid = mean(lat, na.rm = TRUE),
+    lon_mid = mean(lon, na.rm = TRUE))
+
+#create a frame with every state's station closest to midpoint.
+station_by_midpoints <- dat %>%
+  left_join(midpoints, by = "STATE") %>% 
+  # distance of lat and lon by midpoint
+  mutate(distance_2 = sqrt((lat - lat_mid)^2 + (lon - lon_mid)^2)) %>%
+  group_by(STATE) %>%
+  slice_min(distance_2, with_ties = FALSE) %>%
+  select(STATE, USAFID, lat, lon, temp, wind.sp, atm.press, distance_2)
+
+both <- repstations %>% mutate(type = "Most representative station") %>%  
+    bind_rows(station_by_midpoints %>% mutate(type = "Closest to midpoint")) 
+
+leaflet(both) %>%
+  addTiles() %>%
+  addCircleMarkers(
+    lng = ~lon, lat = ~lat,
+    color = ~ifelse(type == "Most representative station", "lightgreen", "pink"),
+    radius = 5,
+    label = ~paste("State:", STATE,"\n",
+                   "USAFID:", USAFID, "\n",
+                   "Temp:", temp,"\n",
+                   "Wind Speed:", wind.sp,"\n",
+                   "Pressure:", atm.press),
+    group = ~type
+  ) %>%
+  addLegend("bottomright", colors = c("lightgreen", "pink"), 
+            labels = c("Most representative station", "Closest to midpoint"),
+            title = "Station Type") %>%
+  setView(lng = -98.5833, lat = 39.8333, zoom = 4)
+
+```
+
+Knit the doc and save it on GitHub.
