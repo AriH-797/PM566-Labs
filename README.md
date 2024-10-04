@@ -314,7 +314,6 @@ state_s <- dat %>%
   mutate(temp_level = if_else(average_temp < 20, "low", 
                       if_else(average_temp >= 20 & average_temp < 25, "mid", 
                               "high")))
-
   
 summary_table<- state_s %>%
   group_by(temp_level) %>%
