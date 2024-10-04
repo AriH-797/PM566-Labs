@@ -172,3 +172,40 @@ cat("The median atmospheric pressure station is USAFID:", med_atm)
 The median wind speed and atmospheric pressure stations are both in California and they match; however, these do not coincide with the median temperature station located in Michigan.
 
 Knit the document, commit your changes, and push it to GitHub. Don't forget to add `README.md` to the tree, the first time you render it.
+
+## Question 2: Representative station per state
+
+Just like the previous question, you are asked to identify what is the most representative, the median, station per state. This time, instead of looking at one variable at a time, look at the Euclidean distance. If multiple stations show in the median, select the one located at the lowest latitude.
+
+```{r}
+#get temp, wind, and pressure medians arranged by state
+state_median <- dat %>% 
+    group_by(STATE) %>% 
+    summarise(
+        temp_avg      = median(temp, na.rm=TRUE),
+        wind.sp_avg   = median(wind.sp, na.rm=TRUE),
+        atm.press_avg = median(atm.press, na.rm = TRUE)
+    ) %>% 
+    arrange(STATE)
+
+##add the state averages to dat data frame
+station_med <- dat %>%
+   left_join(state_median, by = "STATE") %>%
+  mutate( ##calculate eucledian distance
+    distance = sqrt((temp - temp_avg)^2 + 
+                    (wind.sp - wind.sp_avg)^2 + 
+                    (atm.press - atm.press_avg)^2)
+  )
+
+repstations <- station_med %>%
+  group_by(STATE) %>%
+  slice_min(distance, with_ties = TRUE) %>%  # Select the station for each state with the smallest distance
+  arrange(lat) %>%  # Sort by latitude
+  slice(1) %>%  # Select the station with the lowest latitude in case of ties
+  select(STATE, USAFID, lat, temp, wind.sp, atm.press, distance)
+ print(repstations )
+```
+
+Most representative station is in Texas (USAFID = 722536), with the lowest eucledian distance and the lowest latitude at 29.53.
+
+Knit the doc and save it on GitHub.
