@@ -1,9 +1,8 @@
-# PM566-Labs
 ---
 title: "Lab 05 - Data Wrangling"
 author: Arianna Hernandez
 output: html_document
-date: 2021-09-23
+date: 2024-10-04
 embed-resources: true
 ---
 
@@ -92,6 +91,7 @@ Once you are done setting up the project, you can now start working with the MET
 library(data.table)
 library(dtplyr)
 library(dplyr)
+library(leaflet)
 ```
 
 2.  Load the met data from https://raw.githubusercontent.com/USCbiostats/data-science-data/master/02_met/met_all.gz, and also the station data. For the later, you can use the code we used during lecture to pre-process the stations data:
@@ -175,7 +175,7 @@ Knit the document, commit your changes, and push it to GitHub. Don't forget to a
 
 ## Question 2: Representative station per state
 
-Just like the previous question, you are asked to identify what is the most representative, the median, station per state. This time, instead of looking at one variable at a time, look at the Euclidean distance. If multiple stations show in the median, select the one located at the lowest latitude.
+Just like the previous question, you are asked to identify what is the most representative, the median, station per state. This time, instead of looking at one variable at a time, look at the euclidean distance. If multiple stations show in the median, select the one located at the lowest latitude.
 
 ```{r}
 #get temp, wind, and pressure medians arranged by state
@@ -191,7 +191,7 @@ state_median <- dat %>%
 ##add the state averages to dat data frame
 station_med <- dat %>%
    left_join(state_median, by = "STATE") %>%
-  mutate( ##calculate eucledian distance
+  mutate(##calculate eucledian distance
     distance = sqrt((temp - temp_avg)^2 + 
                     (wind.sp - wind.sp_avg)^2 + 
                     (atm.press - atm.press_avg)^2)
@@ -199,11 +199,14 @@ station_med <- dat %>%
 
 repstations <- station_med %>%
   group_by(STATE) %>%
-  slice_min(distance, with_ties = TRUE) %>%  # Select the station for each state with the smallest distance
-  arrange(lat) %>%  # Sort by latitude
-  slice(1) %>%  # Select the station with the lowest latitude in case of ties
-  select(STATE, USAFID, lat, temp, wind.sp, atm.press, distance)
- print(repstations )
+  slice_min(distance, with_ties = TRUE) %>%
+  select(STATE, USAFID, lat, lon, temp, wind.sp, atm.press, distance) %>%
+  arrange(by = lat) %>%
+  slice(1)
+
+ min(repstations$lat)
+ which(repstations$lat == 29.533)
+ repstations[41,]
 ```
 
 Most representative station is in Texas (USAFID = 722536), with the lowest eucledian distance and the lowest latitude at 29.53.
@@ -255,6 +258,7 @@ leaflet(both) %>%
 ```
 
 Knit the doc and save it on GitHub.
+
 ## Question 4: Means of means
 
 Using the `quantile()` function, generate a summary table that shows the number of states included, average temperature, wind-speed, and atmospheric pressure by the variable "average temperature level," which you'll need to create.
@@ -291,6 +295,7 @@ s_table <- averages %>%
 print(s_table)
 
 ```
+
 Once you are done with that, you can compute the following:
 
 -   Number of entries (records),
@@ -314,6 +319,7 @@ state_s <- dat %>%
   mutate(temp_level = if_else(average_temp < 20, "low", 
                       if_else(average_temp >= 20 & average_temp < 25, "mid", 
                               "high")))
+
   
 summary_table<- state_s %>%
   group_by(temp_level) %>%
@@ -335,4 +341,3 @@ git commit -a -m "Finalizing lab 5 https://github.com/USCbiostats/PM566/issues/6
 ```
 
 This will let me know which version of your repository to look at for grading purposes.
-
